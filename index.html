@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>최신 한국 뉴스</title>
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .news-count {
+      text-align: center;
+      color: #666;
+      margin-bottom: 20px;
+    }
+    
+    .news-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); /* 정확히 3열 그리드 */
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    /* 모바일 화면에서는 1열로 표시 */
+    @media (max-width: 768px) {
+      .news-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* 태블릿 화면에서는 2열로 표시 */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .news-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    .news-card {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .news-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .news-image-wrapper {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%; /* 16:9 비율 유지 */
+      overflow: hidden;
+    }
+    
+    .news-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .news-content {
+      padding: 15px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .news-title {
+      font-size: 16px;
+      margin-top: 0;
+      margin-bottom: 10px;
+      /* 2줄로 제한하고 말줄임표 표시 */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .news-date {
+      color: #666;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+    
+    .news-link {
+      display: block;
+      text-align: right;
+      color: #0066cc;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: auto;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      font-size: 18px;
+      color: #666;
+      grid-column: span 3;
+    }
+    
+    .error {
+      text-align: center;
+      padding: 20px;
+      background-color: #fff0f0;
+      color: #e74c3c;
+      border-radius: 8px;
+      margin: 20px auto;
+      max-width: 600px;
+    }
+  </style>
+</head>
+<body>
+  <h1>최신 한국 뉴스</h1>
+  <div id="news-count" class="news-count"></div>
+  <div id="news-container" class="news-container">
+    <div class="loading">뉴스를 불러오는 중...</div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchNews();
+    });
+
+    async function fetchNews() {
+      try {
+        const response = await fetch('/news');
+        const data = await response.json();
+        
+        if (data && data.data && data.data.length > 0) {
+          displayNews(data.data);
+          updateNewsCount(data.data.length);
+        } else {
+          showError('뉴스를 찾을 수 없습니다.');
+        }
+      } catch (error) {
+        console.error('뉴스를 불러오는 중 오류가 발생했습니다:', error);
+        showError('뉴스를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    }
+
+    function displayNews(newsItems) {
+      const container = document.getElementById('news-container');
+      container.innerHTML = '';
+      
+      // 정확히 9개 뉴스를 표시하기 위한 처리
+      const newsToShow = newsItems.slice(0, 9);
+      
+      // 9개 미만인 경우 빈 카드로 채우기
+      while (newsToShow.length < 9) {
+        newsToShow.push({
+          title: "추가 뉴스를 준비 중입니다",
+          published_at: new Date().toISOString(),
+          publisher: "뉴스 서비스",
+          url: "#",
+          image_url: "/default-news-image.jpg"
+        });
+      }
+      
+      newsToShow.forEach((news, index) => {
+        const date = new Date(news.published_at);
+        const formattedDate = `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+        
+        const newsCard = document.createElement('div');
+        newsCard.className = 'news-card';
+        
+        newsCard.innerHTML = `
+          <div class="news-image-wrapper">
+            <img class="news-image" src="${news.image_url || '/default-news-image.jpg'}" alt="${news.title}" onerror="this.src='/default-news-image.jpg'">
+          </div>
+          <div class="news-content">
+            <h2 class="news-title">${news.title}</h2>
+            <div class="news-date">${formattedDate} · ${getPublisherName(news.publisher)}</div>
+            <a href="${news.url}" target="_blank" class="news-link">기사 읽기 →</a>
+          </div>
+        `;
+        
+        container.appendChild(newsCard);
+      });
+    }
+    
+    function updateNewsCount(count) {
+      document.getElementById('news-count').textContent = `총 뉴스 개수: ${count}`;
+    }
+    
+    function getPublisherName(publisher) {
+      if (!publisher) return '한국 언론사';
+      return typeof publisher === 'string' ? publisher : publisher.name || '한국 언론사';
+    }
+
+    function showError(message) {
+      const container = document.getElementById('news-container');
+      container.innerHTML = `<div class="error">${message}</div>`;
+    }
+  </script>
+</body>
+</html>

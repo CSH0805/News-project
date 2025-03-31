@@ -4,9 +4,12 @@ const sqlite3 = require('sqlite3').verbose();
 const app = express();
 const bcrypt = require('bcrypt'); // bcrypt 모듈 추가
 require('dotenv').config(); // 추가!
+const jwt = require('jsonwebtoken'); // 추가
 
 const API_KEY = process.env.API_KEY;         // .env 파일에서 읽기
 const AUTH_TOKEN = process.env.AUTH_TOKEN;    // .env 파일에서 읽기
+const JWT_SECRET = process.env.JWT_SECRET;
+
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -96,6 +99,48 @@ app.post('/signup', authenticateToken, async (req, res) => {
         res.json({ message: "회원가입 성공", userId: this.lastID });
     });
 });
+  
+
+app.post('/login', (req, res) => {
+    const { title, password } = req.body;
+
+    if (!title || !password) {
+        return res.status(400).json({ error: 'ID(title)와 password를 입력해주세요.' });
+    }
+
+    const db = new sqlite3.Database('./database.db');
+
+    const query = `SELECT * FROM users WHERE title = ?`;
+    db.get(query, [title], async (err, user) => {
+        db.close();
+
+        if (err) {
+            console.error("❌ 로그인 중 DB 에러:", err.message);
+            return res.status(500).json({ error: err.message });
+        }
+
+        if (!user) {
+            return res.status(401).json({ error: '등록되지 않은 사용자입니다.' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ error: '비밀번호가 일치하지 않습니다.' });
+        }
+
+        const token = jwt.sign(
+            { id: user.id, title: user.title },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.json({
+            message: '로그인 성공!',
+            token: token
+        });
+    });
+});
+
 
 // 서버 실행
 app.listen(3000, () => {

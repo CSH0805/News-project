@@ -11,6 +11,8 @@ const AUTH_TOKEN = process.env.AUTH_TOKEN;    // .env 파일에서 읽기
 const JWT_SECRET = process.env.JWT_SECRET;
 
 
+
+
 app.use(express.json());
 app.use(express.static(__dirname));
 
@@ -74,31 +76,32 @@ app.get('/news', async (req, res) => {
 });
 
 // 회원가입 API (인증 필요)
-app.post('/signup', authenticateToken, async (req, res) => {
+// ✅ 인증 없이 누구나 회원가입 가능
+app.post('/signup', async (req, res) => {
     const { title, password } = req.body;
-
+  
     if (!title || !password) {
-        return res.status(400).json({ error: 'ID(title)와 password를 입력해주세요.' });
+      return res.status(400).json({ error: 'ID(title)와 password를 입력해주세요.' });
     }
-
-    // bcrypt로 비밀번호 해싱
-    const hashedPassword = await bcrypt.hash(password, 10); // 숫자 10은 해싱 반복 횟수 (권장)
-
+  
+    const hashedPassword = await bcrypt.hash(password, 10);
+  
     const db = new sqlite3.Database('./database.db');
-
     const query = `INSERT INTO users (title, password) VALUES (?, ?)`;
-    db.run(query, [title, hashedPassword], function(err) {
-        db.close();
-
-        if (err) {
-            console.error("❌ 회원가입 중 에러:", err.message);
-            return res.status(500).json({ error: err.message });
-        }
-
-        console.log("✅ 회원가입 성공, 새 사용자 ID:", this.lastID);
-        res.json({ message: "회원가입 성공", userId: this.lastID });
+  
+    db.run(query, [title, hashedPassword], function (err) {
+      db.close();
+  
+      if (err) {
+        console.error("❌ 회원가입 중 에러:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
+  
+      console.log("✅ 회원가입 성공, 새 사용자 ID:", this.lastID);
+      res.json({ message: "회원가입 성공", userId: this.lastID });
     });
-});
+  });
+  
   
 
 app.post('/login', (req, res) => {
@@ -141,6 +144,87 @@ app.post('/login', (req, res) => {
     });
 });
 
+
+const authenticateJWT = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) return res.status(401).json({ error: '토큰이 없습니다.' });
+  
+    const token = authHeader.split(' ')[1];
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      req.user = decoded; // 사용자 정보 요청에 저장
+      next();
+    } catch (err) {
+      return res.status(403).json({ error: '유효하지 않은 토큰입니다.' });
+    }
+  };
+  
+  // 게시글 작성 API
+  app.post('/articles', authenticateJWT, (req, res) => {
+    const { title, content } = req.body;
+    const userId = req.user.id;
+  
+    if (!title || !content) {
+      return res.status(400).json({ error: '제목과 내용을 모두 입력해주세요.' });
+    }
+  
+    const db = new sqlite3.Database('./database.db');
+  
+    const query = `INSERT INTO articles (title, content, user_id) VALUES (?, ?, ?)`;
+    db.run(query, [title, content, userId], function (err) {
+      db.close();
+  
+      if (err) {
+        console.error("❌ 게시글 저장 오류:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
+  
+      res.json({
+        message: '게시글이 작성되었습니다.',
+        articleId: this.lastID
+      });
+    });
+  });
+
+
+  // 게시글 삭제 API (작성자만 삭제 가능)
+app.delete('/articles/:id', authenticateJWT, (req, res) => {
+    const articleId = req.params.id;        // 삭제하려는 게시글 ID
+    const userId = req.user.id;             // JWT 토큰에서 추출한 로그인한 사용자 ID
+  
+    const db = new sqlite3.Database('./database.db');
+  
+    // 1. 해당 게시글이 존재하는지 확인
+    db.get(`SELECT * FROM articles WHERE id = ?`, [articleId], (err, article) => {
+      if (err) {
+        db.close();
+        return res.status(500).json({ error: '데이터베이스 오류입니다.' });
+      }
+  
+      if (!article) {
+        db.close();
+        return res.status(404).json({ error: '해당 게시글을 찾을 수 없습니다.' });
+      }
+  
+      // 2. 로그인한 사용자가 게시글의 작성자인지 확인
+      if (article.user_id !== userId) {
+        db.close();
+        return res.status(403).json({ error: '본인이 작성한 게시글만 삭제할 수 있습니다.' });
+      }
+  
+      // 3. 삭제 실행
+      db.run(`DELETE FROM articles WHERE id = ?`, [articleId], function (deleteErr) {
+        db.close();
+  
+        if (deleteErr) {
+          return res.status(500).json({ error: '게시글 삭제 중 오류가 발생했습니다.' });
+        }
+  
+        res.json({ message: '게시글이 성공적으로 삭제되었습니다.' });
+      });
+    });
+  });
+  
 
 // 서버 실행
 app.listen(3000, () => {

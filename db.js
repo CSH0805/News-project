@@ -1,28 +1,30 @@
-// 뉴스 API (인증 적용)
-app.get('/news', authenticateToken, async (req, res) => {
-    // 기존 뉴스 API 코드 유지
+const sqlite3 = require('sqlite3').verbose();
+
+const db = new sqlite3.Database('./database.db');
+
+db.serialize(() => {
+  // users 테이블
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL
+    )
+  `);
+
+  // articles 테이블
+  db.run(`
+    CREATE TABLE IF NOT EXISTS articles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  console.log("✅ users, articles 테이블 생성 완료!");
 });
 
-// 회원가입 API (인증 적용)
-app.post('/signup', authenticateToken, (req, res) => {
-    const { title, password } = req.body;
-
-    if (!title || !password) {
-        return res.status(400).json({ error: 'ID(title)와 password를 입력해주세요.' });
-    }
-
-    const db = new sqlite3.Database('./database.db');
-
-    const query = `INSERT INTO users (title, password) VALUES (?, ?)`;
-    db.run(query, [title, password], function(err) {
-        db.close();
-
-        if (err) {
-            console.error("❌ 회원가입 중 에러:", err.message);
-            return res.status(500).json({ error: err.message });
-        }
-
-        console.log("✅ 회원가입 성공, 새 사용자 ID:", this.lastID);
-        res.json({ message: "회원가입 성공", userId: this.lastID });
-    });
-});
+db.close();

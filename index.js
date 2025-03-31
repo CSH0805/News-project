@@ -226,6 +226,84 @@ app.delete('/articles/:id', authenticateJWT, (req, res) => {
   });
   
 
+  // 댓글 작성 API
+app.post('/articles/:id/comments', authenticateJWT, (req, res) => {
+    const articleId = req.params.id;
+    const userId = req.user.id;
+    const { content } = req.body;
+  
+    if (!content) {
+      return res.status(400).json({ error: '댓글 내용을 입력해주세요.' });
+    }
+  
+    const db = new sqlite3.Database('./database.db');
+  
+    // 먼저 게시글이 존재하는지 확인
+    db.get(`SELECT * FROM articles WHERE id = ?`, [articleId], (err, article) => {
+      if (err) {
+        db.close();
+        return res.status(500).json({ error: 'DB 오류입니다.' });
+      }
+  
+      if (!article) {
+        db.close();
+        return res.status(404).json({ error: '해당 게시글이 존재하지 않습니다.' });
+      }
+  
+      // 댓글 저장
+      const insertQuery = `INSERT INTO comments (article_id, user_id, content) VALUES (?, ?, ?)`;
+      db.run(insertQuery, [articleId, userId, content], function (insertErr) {
+        db.close();
+  
+        if (insertErr) {
+          return res.status(500).json({ error: '댓글 저장 중 오류가 발생했습니다.' });
+        }
+  
+        res.json({ message: '댓글이 작성되었습니다.', commentId: this.lastID });
+      });
+    });
+  });
+  
+
+  // 댓글 삭제 API
+app.delete('/comments/:id', authenticateJWT, (req, res) => {
+    const commentId = req.params.id;
+    const userId = req.user.id;
+  
+    const db = new sqlite3.Database('./database.db');
+  
+    // 1. 댓글이 존재하는지 확인
+    db.get(`SELECT * FROM comments WHERE id = ?`, [commentId], (err, comment) => {
+      if (err) {
+        db.close();
+        return res.status(500).json({ error: 'DB 오류입니다.' });
+      }
+  
+      if (!comment) {
+        db.close();
+        return res.status(404).json({ error: '댓글을 찾을 수 없습니다.' });
+      }
+  
+      // 2. 작성자인지 확인
+      if (comment.user_id !== userId) {
+        db.close();
+        return res.status(403).json({ error: '본인이 작성한 댓글만 삭제할 수 있습니다.' });
+      }
+  
+      // 3. 삭제
+      db.run(`DELETE FROM comments WHERE id = ?`, [commentId], function (deleteErr) {
+        db.close();
+  
+        if (deleteErr) {
+          return res.status(500).json({ error: '댓글 삭제 중 오류가 발생했습니다.' });
+        }
+  
+        res.json({ message: '댓글이 삭제되었습니다.' });
+      });
+    });
+  });
+  
+
 // 서버 실행
 app.listen(3000, () => {
     console.log('서버가 http://localhost:3000에서 실행 중입니다.');

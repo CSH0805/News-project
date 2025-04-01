@@ -1,0 +1,59 @@
+/* 회원가입 폼 스타일 */
+.signup-container {
+    background-color: #fff;
+    padding: 40px 30px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 400px;
+    margin: 80px auto; /* 상단 여백 조절 */
+    box-sizing: border-box;
+  }
+  
+  .signup-container h2 {
+    margin-bottom: 20px;
+    text-align: center;
+    color: #333;
+  }
+  
+  .signup-container input[type="text"],
+  .signup-container input[type="password"] {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+  
+  .signup-container button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .signup-container button:hover {
+    background-color: #0056b3;
+  }
+  
+  .signup-container .error-message {
+    color: #e74c3c;
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  .signup-container .success-message {
+    color: #2ecc71;
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  

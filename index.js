@@ -5,6 +5,9 @@ const app = express();
 const bcrypt = require('bcrypt'); // bcrypt 모듈 추가
 require('dotenv').config(); // 추가!
 const jwt = require('jsonwebtoken'); // 추가
+const cors = require('cors'); // ✅ 추가
+  // ✅ 모든 도메인에서 오는 요청 허용
+  app.use(cors());
 
 const API_KEY = process.env.API_KEY;         // .env 파일에서 읽기
 const AUTH_TOKEN = process.env.AUTH_TOKEN;    // .env 파일에서 읽기
@@ -302,6 +305,14 @@ app.delete('/comments/:id', authenticateJWT, (req, res) => {
       });
     });
   });
+  
+
+  
+  // ✅ 모든 도메인에서 오는 요청 허용
+  app.use(cors());
+  
+  app.use(express.json());
+  app.use(express.static(__dirname));
   
 
 // 서버 실행

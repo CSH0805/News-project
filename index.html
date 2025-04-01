@@ -1,58 +1,99 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>최신 한국 뉴스</title>
   <style>
+    /* 기본 설정 */
+    /* 전체 기본 설정 */
+    html,
     body {
-      font-family: 'Noto Sans KR', sans-serif;
       margin: 0;
-      padding: 20px;
+      padding: 0;
+      font-family: 'Noto Sans KR', sans-serif;
       background-color: #f5f5f5;
+      overflow-y: auto;
+      /* 세로 스크롤 허용 */
     }
+
+    /* 제목 스타일 */
     h1 {
       text-align: center;
       color: #333;
       margin-bottom: 10px;
     }
+
     .news-count {
       text-align: center;
       color: #666;
       margin-bottom: 20px;
     }
+
+    /* 전체 그리드 레이아웃 */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 65% 25% 10%;
+      gap: 20px;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px;
+      box-sizing: border-box;
+      align-items: start;
+    }
+
+    /* 영역별 박스 공통 스타일 */
+    .news-section,
+    .board-section,
+    .ad-section {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    /* 광고 섹션 */
+    .ad-section {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .ad-image {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+
+    /* 뉴스 카드 그리드 */
     .news-container {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
     }
-    @media (max-width: 768px) {
-      .news-container { grid-template-columns: 1fr; }
-    }
-    @media (min-width: 769px) and (max-width: 1024px) {
-      .news-container { grid-template-columns: repeat(2, 1fr); }
-    }
+
     .news-card {
       background: white;
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       transition: transform 0.3s ease;
-      height: 100%;
       display: flex;
       flex-direction: column;
     }
+
     .news-card:hover {
       transform: translateY(-5px);
     }
+
     .news-image-wrapper {
       position: relative;
       width: 100%;
       padding-top: 56.25%;
       overflow: hidden;
     }
+
     .news-image {
       position: absolute;
       top: 0;
@@ -61,12 +102,14 @@
       height: 100%;
       object-fit: cover;
     }
+
     .news-content {
       padding: 15px;
       flex-grow: 1;
       display: flex;
       flex-direction: column;
     }
+
     .news-title {
       font-size: 16px;
       margin: 0 0 10px;
@@ -76,11 +119,13 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
     .news-date {
       color: #666;
       font-size: 12px;
       margin-bottom: 10px;
     }
+
     .news-link {
       margin-top: auto;
       text-align: right;
@@ -88,19 +133,122 @@
       text-decoration: none;
       font-weight: bold;
     }
-    .loading, .error {
-      text-align: center;
-      padding: 20px;
-      color: #e74c3c;
+
+    /* 게시판 */
+    #article-form {
+      margin-top: 10px;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+    }
+
+    button {
+      padding: 8px 14px;
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background-color: #004a99;
+    }
+
+    /* 댓글 */
+    .comment-box {
+      border-top: 1px solid #eee;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+
+    .comment-box button {
+      background: #e74c3c;
+      margin-left: 10px;
+      float: right;
+    }
+
+    .comment-box button:hover {
+      background: #c0392b;
+    }
+
+    /* 반응형 */
+    @media (max-width: 1200px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .news-container {
+        grid-template-columns: 1fr;
+      }
+
+      .ad-section {
+        justify-content: center;
+      }
+
+      .ad-image {
+        transform: scale(1);
+      }
     }
   </style>
 </head>
+
 <body>
-  <h1>최신 한국 뉴스</h1>
-  <div id="news-count" class="news-count"></div>
-  <div id="news-container" class="news-container">
-    <div class="loading">뉴스를 불러오는 중...</div>
+  <div class="main-grid">
+    <div class="news-section">
+      <h1>최신 한국 뉴스</h1>
+      <div id="news-count" class="news-count"></div>
+      <div id="news-container" class="news-container">
+        <!-- 뉴스 카드들 -->
+      </div>
+    </div>
+
+    <div class="board-section">
+      <h1>📋 게시판</h1>
+      <div id="article-form">
+        <input id="article-title" placeholder="제목">
+        <textarea id="article-content" placeholder="내용"></textarea>
+        <button onclick="createArticle()">게시글 작성</button>
+      </div>
+      <div id="articles-container"></div>
+    </div>
+
+    <div class="ad-section">
+      <img src="banner.png" alt="광고 이미지" class="ad-image">
+    </div>
   </div>
+  <!-- 로그인 & 회원가입 버튼 -->
+<div style="text-align: right; margin-bottom: 10px;">
+  <button onclick="toggleLoginForm()">🔐 로그인</button>
+  <button onclick="toggleRegisterForm()">📝 회원가입</button>
+</div>
+
+<!-- 로그인 폼 -->
+<div id="login-form" style="display:none; background:#fff; padding:15px; border-radius:8px; margin-bottom:20px;">
+  <h3>로그인</h3>
+  <input type="text" id="login-username" placeholder="아이디">
+  <input type="password" id="login-password" placeholder="비밀번호">
+  <button onclick="login()">로그인</button>
+</div>
+
+<!-- 회원가입 폼 -->
+<div id="register-form" style="display:none; background:#fff; padding:15px; border-radius:8px; margin-bottom:20px;">
+  <h3>회원가입</h3>
+  <input type="text" id="register-username" placeholder="아이디">
+  <input type="password" id="register-password" placeholder="비밀번호">
+  <button onclick="register()">회원가입</button>
+</div>
 
   <script>
     document.addEventListener('DOMContentLoaded', fetchNews);
@@ -109,7 +257,7 @@
       try {
         const response = await fetch('/news');
         const data = await response.json();
-        
+
         if (data && data.data && data.data.length > 0) {
           displayNews(data.data);
           updateNewsCount(data.data.length);
@@ -123,26 +271,26 @@
     }
 
     function displayNews(newsItems) {
-  const container = document.getElementById('news-container');
-  container.innerHTML = '';
+      const container = document.getElementById('news-container');
+      container.innerHTML = '';
 
-  // 썸네일 이미지가 있는 기사만 필터링
-  const filteredNewsItems = newsItems.filter(news => news.image_url || news.thumbnail_url);
+      // 썸네일 이미지가 있는 기사만 필터링
+      const filteredNewsItems = newsItems.filter(news => news.image_url || news.thumbnail_url);
 
-  // 썸네일 있는 기사 수 체크
-  if (filteredNewsItems.length === 0) {
-    container.innerHTML = '<div class="error">썸네일 이미지가 있는 뉴스를 찾을 수 없습니다.</div>';
-    return;
-  }
+      // 썸네일 있는 기사 수 체크
+      if (filteredNewsItems.length === 0) {
+        container.innerHTML = '<div class="error">썸네일 이미지가 있는 뉴스를 찾을 수 없습니다.</div>';
+        return;
+      }
 
-  filteredNewsItems.forEach(news => {
-    const date = new Date(news.published_at);
-    const formattedDate = `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+      filteredNewsItems.forEach(news => {
+        const date = new Date(news.published_at);
+        const formattedDate = `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
 
-    const newsCard = document.createElement('div');
-    newsCard.className = 'news-card';
+        const newsCard = document.createElement('div');
+        newsCard.className = 'news-card';
 
-    newsCard.innerHTML = `
+        newsCard.innerHTML = `
       <div class="news-image-wrapper">
         <img class="news-image" src="${news.image_url || news.thumbnail_url}" onerror="this.src='/default-news-image.jpg'">
       </div>
@@ -152,11 +300,11 @@
         <a href="${news.content_url.startsWith('http') ? news.content_url : 'https://' + news.content_url}" target="_blank" class="news-link">기사 읽기 →</a>
       </div>`;
 
-    container.appendChild(newsCard);
-  });
+        container.appendChild(newsCard);
+      });
 
-  updateNewsCount(filteredNewsItems.length);
-}
+      updateNewsCount(filteredNewsItems.length);
+    }
 
 
 
@@ -168,6 +316,122 @@
     function showError(message) {
       document.getElementById('news-container').innerHTML = `<div class="error">${message}</div>`;
     }
+
+    const token = localStorage.getItem('token'); // 로그인 시 저장된 JWT
+
+    async function fetchArticles() {
+      const res = await fetch('/articles');
+      const data = await res.json();
+
+      const container = document.getElementById('articles-container');
+      container.innerHTML = '';
+
+      data.articles.forEach(article => {
+        const div = document.createElement('div');
+        div.style = "background:#fff; border:1px solid #ccc; padding:15px; margin:15px 0;";
+
+        div.innerHTML = `
+      <h3>${article.title}</h3>
+      <p>${article.content}</p>
+      <small>작성일: ${new Date(article.created_at).toLocaleString()}</small>
+      <br>
+      <button onclick="deleteArticle(${article.id})">삭제</button>
+
+      <div style="margin-top:15px;">
+        <textarea id="comment-${article.id}" placeholder="댓글 작성..." style="width:100%; height:50px;"></textarea>
+        <button onclick="addComment(${article.id})">댓글 등록</button>
+        <div id="comments-${article.id}"></div>
+      </div>
+    `;
+
+        container.appendChild(div);
+        fetchComments(article.id);
+      });
+    }
+
+    async function createArticle() {
+      const title = document.getElementById('article-title').value;
+      const content = document.getElementById('article-content').value;
+
+      const res = await fetch('/articles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ title, content })
+      });
+
+      const result = await res.json();
+      alert(result.message || result.error);
+      fetchArticles();
+    }
+
+    async function deleteArticle(id) {
+      const confirmDelete = confirm("정말 이 게시글을 삭제할까요?");
+      if (!confirmDelete) return;
+
+      const res = await fetch(`/articles/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
+      });
+
+      const result = await res.json();
+      alert(result.message || result.error);
+      fetchArticles();
+    }
+
+    async function addComment(articleId) {
+      const content = document.getElementById(`comment-${articleId}`).value;
+
+      const res = await fetch(`/articles/${articleId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ content })
+      });
+
+      const result = await res.json();
+      alert(result.message || result.error);
+      fetchComments(articleId);
+    }
+
+    async function fetchComments(articleId) {
+      const res = await fetch(`/articles/${articleId}/comments`);
+      const data = await res.json();
+
+      const container = document.getElementById(`comments-${articleId}`);
+      container.innerHTML = '<strong>댓글:</strong><br>';
+
+      data.comments.forEach(comment => {
+        container.innerHTML += `
+      <div style="border-top:1px solid #ddd; padding:5px 0;">
+        ${comment.content}
+        <button style="float:right;" onclick="deleteComment(${comment.id}, ${articleId})">삭제</button>
+      </div>
+    `;
+      });
+    }
+
+    async function deleteComment(id, articleId) {
+      const res = await fetch(`/comments/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
+      });
+
+      const result = await res.json();
+      alert(result.message || result.error);
+      fetchComments(articleId);
+    }
+
+    fetchArticles();
   </script>
 </body>
+
 </html>

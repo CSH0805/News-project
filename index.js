@@ -300,18 +300,24 @@ app.post('/articles/:id/comments', authenticateJWT, (req, res) => {
 
   app.get('/articles/:id/comments', (req, res) => {
     const articleId = req.params.id;
-  
-    // ✅ 이 줄을 추가!
     const db = new sqlite3.Database('./database.db');
   
-    const sql = `SELECT * FROM comments WHERE article_id = ? ORDER BY created_at ASC`;
+    const sql = `
+      SELECT comments.id, comments.content, comments.created_at, users.title AS username
+      FROM comments
+      JOIN users ON comments.user_id = users.id
+      WHERE comments.article_id = ?
+      ORDER BY comments.created_at ASC
+    `;
   
     db.all(sql, [articleId], (err, rows) => {
-      db.close(); // 💡 DB는 다 쓰면 꼭 닫아줘야 해!
+      db.close();
+  
       if (err) {
-        console.error('❌ 댓글 조회 중 오류:', err.message);
+        console.error('❌ 댓글 조회 중 오류:', err);
         return res.status(500).json({ error: '댓글 조회 실패' });
       }
+  
       res.json({ comments: rows });
     });
   });

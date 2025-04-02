@@ -13,11 +13,13 @@ const API_KEY = process.env.API_KEY;         // .env 파일에서 읽기
 const AUTH_TOKEN = process.env.AUTH_TOKEN;    // .env 파일에서 읽기
 const JWT_SECRET = process.env.JWT_SECRET;
 
+const db = new sqlite3.Database('./database.db');
 
 
 
 app.use(express.json());
 app.use(express.static(__dirname));
+
 
 // 인증 미들웨어
 const authenticateToken = (req, res, next) => {
@@ -82,21 +84,23 @@ app.get('/news', async (req, res) => {
 // ✅ 인증 없이 누구나 회원가입 가능
 app.post('/signup', async (req, res) => {
     const { title, password } = req.body;
+
+    console.log("send")
   
     if (!title || !password) {
       return res.status(400).json({ error: 'ID(title)와 password를 입력해주세요.' });
     }
   
+
     const hashedPassword = await bcrypt.hash(password, 10);
   
-    const db = new sqlite3.Database('./database.db');
     const query = `INSERT INTO users (title, password) VALUES (?, ?)`;
   
     db.run(query, [title, hashedPassword], function (err) {
-      db.close();
-  
-      if (err) {
-        console.error("❌ 회원가입 중 에러:", err.message);
+        
+        if (err) {
+            db.close();
+            console.error("❌ 회원가입 중 에러:", err.message);
         return res.status(500).json({ error: err.message });
       }
   
@@ -189,6 +193,33 @@ const authenticateJWT = (req, res, next) => {
     });
   });
 
+  // 게시글 전체 조회 API
+app.get('/articles', (req, res) => {
+    const db = new sqlite3.Database('./database.db');
+  
+    const query = `SELECT id, title, content, created_at FROM articles ORDER BY created_at DESC`;
+  
+    db.all(query, [], (err, rows) => {
+      db.close();
+  
+      if (err) {
+        console.error("❌ 게시글 조회 오류:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
+  
+      res.json({ articles: rows });
+    });
+  });
+  
+  app.get('/articles', async (req, res) => {
+    try {
+      const articles = await db.all('SELECT * FROM articles ORDER BY created_at DESC');
+      res.json({ articles });
+    } catch (err) {
+      console.error('게시글 조회 중 오류:', err.message);
+      res.status(500).json({ error: '게시글 조회 실패' });
+    }
+  });
 
   // 게시글 삭제 API (작성자만 삭제 가능)
 app.delete('/articles/:id', authenticateJWT, (req, res) => {
@@ -266,6 +297,28 @@ app.post('/articles/:id/comments', authenticateJWT, (req, res) => {
       });
     });
   });
+
+  app.get('/articles/:id/comments', (req, res) => {
+    const articleId = req.params.id;
+  
+    // ✅ 이 줄을 추가!
+    const db = new sqlite3.Database('./database.db');
+  
+    const sql = `SELECT * FROM comments WHERE article_id = ? ORDER BY created_at ASC`;
+  
+    db.all(sql, [articleId], (err, rows) => {
+      db.close(); // 💡 DB는 다 쓰면 꼭 닫아줘야 해!
+      if (err) {
+        console.error('❌ 댓글 조회 중 오류:', err.message);
+        return res.status(500).json({ error: '댓글 조회 실패' });
+      }
+      res.json({ comments: rows });
+    });
+  });
+  
+  
+  
+  
   
 
   // 댓글 삭제 API

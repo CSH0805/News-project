@@ -25,8 +25,6 @@
       box-sizing: border-box;
     }
 
-
-
     .top-bar-buttons button {
       margin-left: 10px;
       padding: 6px 12px;
@@ -77,7 +75,8 @@
       border-radius: 8px;
       box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
       min-height: 800px;
-      /* ✅ 추가된 부분 */
+      max-height: 1000px;
+      overflow-y: auto;
       box-sizing: border-box;
     }
 
@@ -175,7 +174,9 @@
       border-radius: 6px;
       font-family: inherit;
       font-size: 14px;
-      resize: vertical;
+      box-sizing: border-box;
+      resize: none;
+      /* ✅ 크기 조절 비활성화 */
     }
 
     button {
@@ -208,6 +209,19 @@
       background: #c0392b;
     }
 
+    /* ✅ 게시글 카드 전체 스타일 */
+    .article-card {
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 8px;
+      overflow: hidden;
+      /* ✅ 댓글창이 삐져나가지 않도록 */
+      box-sizing: border-box;
+    }
+
+    /* 반응형 대응 */
     @media (max-width: 1200px) {
       .main-grid {
         grid-template-columns: 1fr;
@@ -229,9 +243,10 @@
   <div class="top-bar">
     <div class="top-bar-buttons">
       <button onclick="location.href='login.html'">로그인</button>
-      <button onclick="location.href='register.html'">회원가입</button>
+      <button onclick="location.href='signup.html'">회원가입</button> <!-- ✅ 경로 수정 완료 -->
     </div>
   </div>
+
 
   <div class="main-grid">
     <!-- 뉴스 영역 -->
@@ -262,9 +277,11 @@
   <script>
     document.addEventListener('DOMContentLoaded', fetchNews);
 
+    const BACKEND_URL = 'http://localhost:3000'; // 백엔드 URL
+
     async function fetchNews() {
       try {
-        const response = await fetch('/news');
+        const response = await fetch(`${BACKEND_URL}/news`);
         const data = await response.json();
 
         if (data && data.data && data.data.length > 0) {
@@ -320,7 +337,7 @@
     const token = localStorage.getItem('token');
 
     async function fetchArticles() {
-      const res = await fetch('/articles');
+      const res = await fetch(`${BACKEND_URL}/articles`);
       const data = await res.json();
 
       const container = document.getElementById('articles-container');
@@ -351,7 +368,7 @@
       const title = document.getElementById('article-title').value;
       const content = document.getElementById('article-content').value;
 
-      const res = await fetch('/articles', {
+      const res = await fetch(`${BACKEND_URL}/articles`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -368,7 +385,7 @@
     async function deleteArticle(id) {
       if (!confirm("정말 이 게시글을 삭제할까요?")) return;
 
-      const res = await fetch(`/articles/${id}`, {
+      const res = await fetch(`${BACKEND_URL}/articles/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': 'Bearer ' + token
@@ -383,7 +400,7 @@
     async function addComment(articleId) {
       const content = document.getElementById(`comment-${articleId}`).value;
 
-      const res = await fetch(`/articles/${articleId}/comments`, {
+      const res = await fetch(`${BACKEND_URL}/articles/${articleId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -398,7 +415,7 @@
     }
 
     async function fetchComments(articleId) {
-      const res = await fetch(`/articles/${articleId}/comments`);
+      const res = await fetch(`${BACKEND_URL}/articles/${articleId}/comments`);
       const data = await res.json();
 
       const container = document.getElementById(`comments-${articleId}`);
@@ -414,7 +431,7 @@
     }
 
     async function deleteComment(id, articleId) {
-      const res = await fetch(`/comments/${id}`, {
+      const res = await fetch(`${BACKEND_URL}/comments/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': 'Bearer ' + token

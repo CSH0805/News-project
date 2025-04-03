@@ -254,13 +254,14 @@ button:hover {
 </head>
 
 <body>
-  <!-- ✅ 상단 로그인/회원가입 버튼 -->
-  <div class="top-bar">
-    <div class="top-bar-buttons">
-      <button onclick="location.href='login.html'">로그인</button>
-      <button onclick="location.href='signup.html'">회원가입</button> <!-- ✅ 경로 수정 완료 -->
-    </div>
+<!-- ✅ 상단 로그인/회원가입 버튼 -->
+<div class="top-bar">
+  <div class="top-bar-buttons" id="auth-buttons">
+    <button onclick="location.href='login.html'">로그인</button>
+    <button onclick="location.href='signup.html'">회원가입</button>
   </div>
+  <div id="user-info" style="display:none; font-weight: bold;"></div>
+</div>
 
 
   <div class="main-grid">
@@ -461,6 +462,19 @@ button:hover {
       alert(result.message || result.error);
       fetchComments(articleId);
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+  const token = localStorage.getItem('token');
+  const userTitle = localStorage.getItem('userTitle'); // 사용자 ID 저장된 값
+
+  if (token && userTitle) {
+    document.getElementById('auth-buttons').style.display = 'none';
+    const userInfo = document.getElementById('user-info');
+    userInfo.style.display = 'block';
+    userInfo.textContent = `환영합니다, ${userTitle}님`;
+  }
+});
+
   
     fetchArticles();
   </script>  

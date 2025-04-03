@@ -27,8 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
   
         if (res.ok) {
           alert(result.message || '로그인 성공!');
-          localStorage.setItem('token', result.token); // ✅ 토큰 저장
-          window.location.href = '/index.html'; // ✅ 로그인 후 이동할 페이지
+          localStorage.setItem('token', result.token);             // ✅ 토큰 저장
+          localStorage.setItem('userTitle', username);             // ✅ 사용자 ID 저장
+          window.location.href = '/index.html';                    // ✅ 로그인 후 이동할 페이지
         } else {
           alert(result.error || '로그인 실패');
         }

@@ -175,7 +175,7 @@ textarea {
   font-family: inherit;
   font-size: 14px;
   box-sizing: border-box;
-  resize: none; /* ✅ 크기 조절 비활성화 */
+  resize: none;
 }
 
 button {
@@ -192,7 +192,6 @@ button:hover {
   background-color: #004a99;
 }
 
-/* ✅ 댓글 한 줄 정렬 개선 */
 .comment-box {
   display: flex;
   justify-content: space-between;
@@ -200,22 +199,16 @@ button:hover {
   border-top: 1px solid #ddd;
   padding: 8px 0;
   font-size: 14px;
-  gap: 10px;
 }
 
-.comment-content {
+.comment-box .comment-content {
   flex: 1;
-  word-break: break-word;
+  margin-right: 10px;
 }
 
 .comment-box button {
   background: #e74c3c;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 13px;
-  border: none;
-  color: white;
-  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .comment-box button:hover {
@@ -233,7 +226,16 @@ button:hover {
   box-sizing: border-box;
 }
 
-/* 반응형 대응 */
+.article-meta {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.article-meta strong {
+  color: #333;
+}
+
 @media (max-width: 1200px) {
   .main-grid {
     grid-template-columns: 1fr;
@@ -247,6 +249,7 @@ button:hover {
     justify-content: center;
   }
 }
+
   </style>
 </head>
 
@@ -288,14 +291,15 @@ button:hover {
   </div>
   <script>
     document.addEventListener('DOMContentLoaded', fetchNews);
-
-    const BACKEND_URL = 'http://localhost:3000'; // 백엔드 URL
-
+  
+    const BACKEND_URL = 'http://localhost:3000';
+    const token = localStorage.getItem('token');
+  
     async function fetchNews() {
       try {
         const response = await fetch(`${BACKEND_URL}/news`);
         const data = await response.json();
-
+  
         if (data && data.data && data.data.length > 0) {
           displayNews(data.data);
           updateNewsCount(data.data.length);
@@ -307,22 +311,22 @@ button:hover {
         showError('뉴스를 불러오는 중 오류가 발생했습니다.');
       }
     }
-
+  
     function displayNews(newsItems) {
       const container = document.getElementById('news-container');
       container.innerHTML = '';
-
+  
       const filtered = newsItems.filter(n => n.image_url || n.thumbnail_url);
-
+  
       if (filtered.length === 0) {
         container.innerHTML = '<div class="error">썸네일 이미지가 있는 뉴스를 찾을 수 없습니다.</div>';
         return;
       }
-
+  
       filtered.forEach(news => {
         const date = new Date(news.published_at);
         const formattedDate = `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
-
+  
         const card = document.createElement('div');
         card.className = 'news-card';
         card.innerHTML = `
@@ -337,49 +341,48 @@ button:hover {
         container.appendChild(card);
       });
     }
-
+  
     function updateNewsCount(count) {
       document.getElementById('news-count').textContent = `총 뉴스 개수: ${count}`;
     }
-
+  
     function showError(message) {
       document.getElementById('news-container').innerHTML = `<div class="error">${message}</div>`;
     }
-
-    const token = localStorage.getItem('token');
-
+  
     async function fetchArticles() {
       const res = await fetch(`${BACKEND_URL}/articles`);
       const data = await res.json();
-
+  
       const container = document.getElementById('articles-container');
       container.innerHTML = '';
-
+  
       data.articles.forEach(article => {
         const div = document.createElement('div');
-        div.style = "background:#fff; border:1px solid #ccc; padding:15px; margin:15px 0;";
-
+        div.className = 'article-card';
+  
         div.innerHTML = `
-          <h3>${article.title}</h3>
-          <p>${article.content}</p>
-          <small>작성일: ${new Date(article.created_at).toLocaleString()}</small><br />
-          <button onclick="deleteArticle(${article.id})">삭제</button>
-          <div style="margin-top:15px;">
-            <textarea id="comment-${article.id}" placeholder="댓글 작성..." style="width:100%; height:50px;"></textarea>
-            <button onclick="addComment(${article.id})">댓글 등록</button>
-            <div id="comments-${article.id}"></div>
-          </div>
-        `;
-
+  <h3>${article.title}</h3>
+  <p>${article.content}</p>
+  <small><strong>작성자:</strong> ${article.username || '알 수 없음'}</small><br />
+  <small>작성일: ${new Date(article.created_at).toLocaleString()}</small><br />
+  <button onclick="deleteArticle(${article.id})">삭제</button>
+  <div style="margin-top:15px;">
+    <textarea id="comment-${article.id}" placeholder="댓글 작성..." style="width:100%; height:50px;"></textarea>
+    <button onclick="addComment(${article.id})">댓글 등록</button>
+    <div id="comments-${article.id}"></div>
+  </div>
+`;
+  
         container.appendChild(div);
         fetchComments(article.id);
       });
     }
-
+  
     async function createArticle() {
       const title = document.getElementById('article-title').value;
       const content = document.getElementById('article-content').value;
-
+  
       const res = await fetch(`${BACKEND_URL}/articles`, {
         method: 'POST',
         headers: {
@@ -388,30 +391,30 @@ button:hover {
         },
         body: JSON.stringify({ title, content })
       });
-
+  
       const result = await res.json();
       alert(result.message || result.error);
       fetchArticles();
     }
-
+  
     async function deleteArticle(id) {
       if (!confirm("정말 이 게시글을 삭제할까요?")) return;
-
+  
       const res = await fetch(`${BACKEND_URL}/articles/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': 'Bearer ' + token
         }
       });
-
+  
       const result = await res.json();
       alert(result.message || result.error);
       fetchArticles();
     }
-
+  
     async function addComment(articleId) {
       const content = document.getElementById(`comment-${articleId}`).value;
-
+  
       const res = await fetch(`${BACKEND_URL}/articles/${articleId}/comments`, {
         method: 'POST',
         headers: {
@@ -420,32 +423,32 @@ button:hover {
         },
         body: JSON.stringify({ content })
       });
-
+  
       const result = await res.json();
       alert(result.message || result.error);
       fetchComments(articleId);
     }
-
+  
     async function fetchComments(articleId) {
-      const res = await fetch(`http://localhost:3000/articles/${articleId}/comments`);
+      const res = await fetch(`${BACKEND_URL}/articles/${articleId}/comments`);
       const data = await res.json();
-
+  
       const container = document.getElementById(`comments-${articleId}`);
       container.innerHTML = '<strong>댓글:</strong><br>';
-
+  
       data.comments.forEach(comment => {
-        container.innerHTML += `
-    <div class="comment-box">
-      <div class="comment-content">
-        <strong>${comment.username}</strong>: ${comment.content}
-      </div>
-      <button onclick="deleteComment(${comment.id}, ${articleId})">삭제</button>
-    </div>
-  `;
+        const div = document.createElement('div');
+        div.className = 'comment-box';
+  
+        div.innerHTML = `
+          <div class="comment-content"><strong>${comment.username}</strong>: ${comment.content}</div>
+          <button onclick="deleteComment(${comment.id}, ${articleId})">삭제</button>
+        `;
+  
+        container.appendChild(div);
       });
     }
-
-
+  
     async function deleteComment(id, articleId) {
       const res = await fetch(`${BACKEND_URL}/comments/${id}`, {
         method: 'DELETE',
@@ -453,14 +456,13 @@ button:hover {
           'Authorization': 'Bearer ' + token
         }
       });
-
+  
       const result = await res.json();
       alert(result.message || result.error);
       fetchComments(articleId);
     }
-
+  
     fetchArticles();
-  </script>
+  </script>  
 </body>
-
 </html>

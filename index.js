@@ -193,11 +193,16 @@ const authenticateJWT = (req, res, next) => {
     });
   });
 
-  // 게시글 전체 조회 API
+// 게시글 전체 조회 API (작성자 ID 포함)
 app.get('/articles', (req, res) => {
     const db = new sqlite3.Database('./database.db');
   
-    const query = `SELECT id, title, content, created_at FROM articles ORDER BY created_at DESC`;
+    const query = `
+      SELECT articles.id, articles.title, articles.content, articles.created_at, users.title AS username
+      FROM articles
+      JOIN users ON articles.user_id = users.id
+      ORDER BY articles.created_at DESC
+    `;
   
     db.all(query, [], (err, rows) => {
       db.close();
@@ -211,15 +216,7 @@ app.get('/articles', (req, res) => {
     });
   });
   
-  app.get('/articles', async (req, res) => {
-    try {
-      const articles = await db.all('SELECT * FROM articles ORDER BY created_at DESC');
-      res.json({ articles });
-    } catch (err) {
-      console.error('게시글 조회 중 오류:', err.message);
-      res.status(500).json({ error: '게시글 조회 실패' });
-    }
-  });
+  
 
   // 게시글 삭제 API (작성자만 삭제 가능)
 app.delete('/articles/:id', authenticateJWT, (req, res) => {
